@@ -1,0 +1,757 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>BLOOD BOOKING | Blood support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout concept: one app shell, four role tabs (User, Blood bank, Delivery partner, Admin).
+   The user tab is a 4 step flow beside a schematic city map. Palette: blood red accent, hospital blue, cool neutrals. */
+:root{
+  --bg:#F3F4F7; --surface:#FFFFFF; --surface-2:#F7F8FA; --ink:#1A1D26; --muted:#5B6372; --line:#DFE2E9;
+  --accent:#C2262E; --accent-ink:#FFFFFF; --accent-soft:#FCE9EA;
+  --blue:#2557A7; --blue-soft:#E6EEFA;
+  --good:#17794F; --good-soft:#E3F4EC; --warn:#8A5A00; --warn-soft:#FBF0D9; --bad:#B4232A; --bad-soft:#FCE9EA;
+  --map-land:#EEF0F4; --map-block:#E3E6EC; --map-park:#D3E7D6; --map-water:#C7DCF0; --map-road:#FFFFFF; --map-road-edge:#D0D4DC; --map-text:#4A5160;
+  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --font-body:'Figtree','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12141A; --surface:#1A1D26; --surface-2:#20242F; --ink:#ECEEF3; --muted:#9AA2B2; --line:#2D3240;
+    --accent:#F0545C; --accent-ink:#1A0A0B; --accent-soft:#3A1B1F;
+    --blue:#82ABF2; --blue-soft:#1D2A44;
+    --good:#4CC38A; --good-soft:#15302A; --warn:#E8B04A; --warn-soft:#3A2E14; --bad:#FF7B82; --bad-soft:#3A1B1F;
+    --map-land:#171A22; --map-block:#1E222C; --map-park:#1E3226; --map-water:#1A2B43; --map-road:#2B303D; --map-road-edge:#3A4050; --map-text:#9AA2B2;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12141A; --surface:#1A1D26; --surface-2:#20242F; --ink:#ECEEF3; --muted:#9AA2B2; --line:#2D3240;
+  --accent:#F0545C; --accent-ink:#1A0A0B; --accent-soft:#3A1B1F;
+  --blue:#82ABF2; --blue-soft:#1D2A44;
+  --good:#4CC38A; --good-soft:#15302A; --warn:#E8B04A; --warn-soft:#3A2E14; --bad:#FF7B82; --bad-soft:#3A1B1F;
+  --map-land:#171A22; --map-block:#1E222C; --map-park:#1E3226; --map-water:#1A2B43; --map-road:#2B303D; --map-road-edge:#3A4050; --map-text:#9AA2B2;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.5;padding-inline:16px;padding-block:16px 48px}
+.app{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3,h4,p{margin:0}
+h2{font-family:var(--font-display);font-size:20px;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+h3{font-family:var(--font-display);font-size:16px;font-weight:700;text-wrap:balance}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.mono{font-family:var(--font-mono);font-size:12.5px}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:var(--accent);display:grid;place-items:center;flex:none}
+.brand-name{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.brand-sub{font-size:12.5px;color:var(--muted)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;background:var(--surface);border:1px solid var(--line);padding:4px;border-radius:12px}
+.tab{border:0;background:transparent;padding:7px 12px;border-radius:9px;cursor:pointer;font-weight:600;color:var(--muted)}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.ribbon{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 12px;font-weight:500;font-size:13px}
+
+/* shared parts */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.between{justify-content:space-between}
+.grow{flex:1 1 auto;min-width:0}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.btn.block{width:100%;padding:11px 14px}
+.btn.small{padding:5px 10px;font-size:12.5px}
+.linkbtn{border:0;background:none;color:var(--blue);cursor:pointer;padding:0;font-weight:600}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.blue{background:var(--blue-soft);color:var(--blue)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>label,.label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=tel],input[type=password],select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+input:read-only{background:var(--surface-2)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 0;min-width:52px;text-align:center;cursor:pointer;font-weight:700;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:4px 11px;border-radius:7px;cursor:pointer;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:5px 0}
+.kv.total{border-top:1px solid var(--line);margin-top:4px;padding-top:9px;font-weight:700;font-size:15px}
+.note{font-size:12.5px;color:var(--muted)}
+.empty{text-align:center;padding:28px 16px;display:flex;flex-direction:column;gap:10px;align-items:center}
+
+/* stepper */
+.stepper{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.stepper li{flex:1 1 150px}
+.stepper button{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 12px;display:flex;gap:10px;align-items:center;cursor:pointer}
+.stepper button[disabled]{cursor:default}
+.stepper .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;background:var(--surface-2);color:var(--muted);flex:none}
+.stepper .cur{border-color:var(--ink)}
+.stepper .cur .n{background:var(--accent);color:var(--accent-ink)}
+.stepper .done .n{background:var(--good-soft);color:var(--good)}
+.stepper .t{font-weight:700;line-height:1.2}
+.stepper .s{font-size:12px;color:var(--muted);line-height:1.2}
+
+/* layout */
+.split{display:grid;grid-template-columns:minmax(320px,410px) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:920px){.split{grid-template-columns:minmax(0,1fr)}}
+.maphost{overflow-x:auto;border-radius:10px}
+.maphost svg{display:block;width:100%;min-width:680px;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot.h{background:var(--blue)}.dot.b{background:var(--accent)}.dot.p{background:var(--ink)}
+.line{width:22px;height:0;border-top:4px solid var(--accent);display:inline-block}
+
+/* bank list */
+.banklist{display:flex;flex-direction:column;gap:8px}
+.bank{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.bank.sel{border-color:var(--accent)}
+.bank.off{opacity:.6}
+.bank .nm{font-weight:700}
+.bank .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.bank .meta b{color:var(--ink);font-weight:600}
+
+/* timeline */
+.tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.tl li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;padding:7px 0;position:relative}
+.tl li::before{content:"";position:absolute;left:10px;top:28px;bottom:-7px;width:2px;background:var(--line)}
+.tl li:last-child::before{display:none}
+.tl .ic{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;z-index:1}
+.tl .done .ic{background:var(--good);border-color:var(--good)}
+.tl .now .ic{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.tl .now .tt{font-weight:700}
+.tl .wait{color:var(--muted)}
+.tl .tt{font-weight:600}
+.tl .ts{font-size:12px;color:var(--muted)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;width:0;transition:width .2s linear}
+.bar.cold>i{background:var(--blue)}
+.otp{font-family:var(--font-mono);font-size:30px;font-weight:500;letter-spacing:.3em;padding:8px 14px;border-radius:12px;background:var(--surface-2);border:1px dashed var(--line);display:inline-block}
+.big{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.avatar{width:44px;height:44px;border-radius:50%;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-weight:700;flex:none}
+
+/* gateway */
+.gw{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.gw-h{background:var(--surface-2);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.gw-b{padding:12px;display:flex;flex-direction:column;gap:10px}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite;display:inline-block;vertical-align:-3px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tick{width:54px;height:54px;border-radius:50%;background:var(--good);display:grid;place-items:center}
+
+/* tables */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+.inv td{text-align:center}
+.inv td:first-child,.inv th:first-child{text-align:left;font-weight:700}
+.inv .c{display:inline-flex;flex-direction:column;min-width:64px;padding:4px 6px;border-radius:8px;line-height:1.2}
+.inv .c small{font-size:11px;opacity:.8}
+.c.ok{background:var(--good-soft);color:var(--good)}
+.c.low{background:var(--warn-soft);color:var(--warn)}
+.c.zero{background:var(--bad-soft);color:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi .v{font-family:var(--font-display);font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.phone{max-width:420px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:12px}
+.phone-shell{border:1px solid var(--line);border-radius:26px;padding:14px;background:var(--surface-2);display:flex;flex-direction:column;gap:12px}
+.sw{width:44px;height:26px;border-radius:99px;background:var(--line);border:0;position:relative;cursor:pointer;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);transition:left .15s}
+.sw[aria-checked="true"]{background:var(--good)}
+.sw[aria-checked="true"]::after{left:21px}
+.err{color:var(--bad);font-size:12.5px;font-weight:600}
+
+/* map svg */
+.m-land{fill:var(--map-land)}.m-block{fill:var(--map-block)}.m-park{fill:var(--map-park)}
+.m-water{stroke:var(--map-water);fill:none;stroke-width:56;stroke-linecap:round}
+.m-edge{stroke:var(--map-road-edge);stroke-width:17;fill:none}
+.m-road{stroke:var(--map-road);stroke-width:13;fill:none}
+.m-lbl{fill:var(--map-text);font-size:12px;font-family:var(--font-body);letter-spacing:.06em}
+.mk{cursor:pointer}
+.mk text{font-family:var(--font-body);font-size:14px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--map-land);stroke-width:4;stroke-linejoin:round}
+.mk .halo{fill:var(--map-land);opacity:.9}
+.mk .ring{fill:none;stroke:var(--ink);stroke-width:2.5;stroke-dasharray:4 4}
+.mk.dim{opacity:.4}
+.mk:hover .halo{fill:var(--surface-2)}
+.r-main{stroke:var(--accent);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.r-pre{stroke:var(--muted);stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 10}
+.pulse{fill:var(--accent);opacity:.25;animation:pl 1.6s ease-out infinite;transform-origin:center;transform-box:fill-box}
+@keyframes pl{0%{transform:scale(.6);opacity:.45}100%{transform:scale(1.5);opacity:0}}
+@media (prefers-reduced-motion: reduce){.pulse,.spin{animation:none}.bar>i{transition:none}}
+</style>
+
+<section id="auth" class="card stack" style="max-width:440px;margin:8vh auto 24px"><div class="brand"><div class="brand-mark" aria-hidden="true">♥</div><div><div class="brand-name">BLOOD BOOKING</div><div class="brand-sub">Patient and attendant access</div></div></div><h2 id="authTitle">Sign in</h2><p class="muted">Create a local preview profile or continue with a saved profile on this device.</p><div class="seg"><button data-act="authMode" data-v="login" aria-pressed="true">Sign in</button><button data-act="authMode" data-v="signup" aria-pressed="false">Create account</button></div><div class="field" id="authNameWrap" hidden><label for="authName">Full name</label><input id="authName" type="text" autocomplete="name" placeholder="Your name"></div><div class="field"><label for="authPhone">Mobile number</label><input id="authPhone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10-digit Indian mobile number"></div><div class="field"><label for="authPass">Password</label><input id="authPass" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div><button class="btn primary block" data-act="authenticate">Continue</button><p class="note">Coursework project. Accounts are stored on your own server; no OTP or identity verification is connected.</p><div id="authMsg" class="err"></div></section>
+<div class="app" id="app" hidden>
+  <div class="top">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg width="22" height="22" viewBox="-12 -12 24 24"><path d="M0 -10 C5 -3 9 0 9 5 a9 9 0 0 1 -18 0 C-9 0 -5 -3 0 -10z" fill="#fff"/></svg></div>
+      <div><div class="brand-name">BLOOD BOOKING</div><div class="brand-sub">Blood availability and hospital coordination</div></div>
+    </div>
+    <div class="row"><div class="tabs" role="tablist" aria-label="Choose an app to view" id="tabs"></div><button class="btn small" data-act="logout">Sign out</button></div>
+  </div>
+  <div class="ribbon">Preview workspace · Directory, stock, payment and delivery are not connected to live services.</div>
+
+  <section id="v-user" class="stack">
+    <div class="card stack"><div class="row between"><div><h2>Your location</h2><p class="muted">Choose state, district and city to focus your search.</p></div><button class="btn small" data-act="locate">Use my location</button></div><div class="row"><div class="field grow"><label for="locState">State / UT</label><select id="locState" data-bind="locState"></select></div><div class="field grow"><label for="locDistrict">District</label><select id="locDistrict" data-bind="locDistrict"></select></div><div class="field grow"><label for="locCity">City</label><select id="locCity" data-bind="locCity"></select></div></div><p class="note" id="geoNote">Facility and availability listings below are Delhi examples for this coursework preview. They are not live or verified.</p></div>
+    <ol class="stepper" id="stepper"></ol>
+    <div class="split">
+      <div id="panel" class="stack"></div>
+      <div class="card"><div class="row between" style="margin-bottom:10px"><h3>Service area map</h3><span class="note" id="mapnote"></span></div><div class="maphost" id="map-user"></div>
+        <div class="legend"><span><i class="dot h"></i>Hospital</span><span><i class="dot b"></i>Blood bank</span><span><i class="dot p"></i>Delivery partner</span><span><i class="line"></i>Delivery route</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="v-bank" class="stack" hidden></section>
+  <section id="v-partner" class="stack" hidden></section>
+  <section id="v-admin" class="stack" hidden></section>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clock=d=>d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'});
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- Delhi directory examples and illustrative inventory ---------- */
+const GX=[100,260,420,580,740,900], GY=[90,210,330,450,570], KM=0.004;
+const P=(c,r)=>({x:GX[c],y:GY[r]});
+const HOSP=[
+ {id:'h1',name:'Dr. Ram Manohar Lohia Hospital',c:1,r:1,addr:'Baba Kharak Singh Marg, New Delhi'},
+ {id:'h2',name:'Lok Nayak Hospital',c:4,r:0,addr:'Jawaharlal Nehru Marg, New Delhi'},
+ {id:'h3',name:'Guru Teg Bahadur Hospital',c:3,r:3,addr:'Dilshad Garden, Shahdara, Delhi'},
+ {id:'h4',name:'Dr. Baba Saheb Ambedkar Hospital',c:0,r:3,addr:'Sector 6, Rohini, Delhi'},
+ {id:'h5',name:'All India Institute of Medical Sciences',c:5,r:2,addr:'Ansari Nagar, New Delhi'},
+ {id:'h6',name:'Deen Dayal Upadhyay Hospital',c:2,r:4,addr:'Hari Nagar, New Delhi'}
+].map(h=>({...h,p:P(h.c,h.r)}));
+const BANKS=[
+ {id:'b1',name:'Dr. Ram Manohar Lohia Hospital Blood Centre',c:2,r:1,addr:'Baba Kharak Singh Marg, New Delhi'},
+ {id:'b2',name:'Guru Teg Bahadur Hospital Blood Centre',c:4,r:2,addr:'Shahdara, Delhi'},
+ {id:'b3',name:'Dr. Baba Saheb Ambedkar Hospital Blood Centre',c:1,r:3,addr:'Sector 6, Rohini, Delhi'},
+ {id:'b4',name:'Indian Red Cross Society Blood Centre',c:3,r:0,addr:'1, Red Cross Road, New Delhi'},
+ {id:'b5',name:'AIIMS Blood Centre',c:5,r:4,addr:'Ansari Nagar, New Delhi'}
+].map(b=>({...b,p:P(b.c,b.r)}));
+const GROUPS=['A+','A-','B+','B-','O+','O-','AB+','AB-'];
+const COMPS=[
+ {id:'wb',name:'Whole blood',fee:1450,shelf:35},
+ {id:'prbc',name:'Packed red cells',fee:1550,shelf:42},
+ {id:'plt',name:'Platelets (RDP)',fee:400,shelf:5},
+ {id:'ffp',name:'Fresh frozen plasma',fee:400,shelf:90}
+];
+const PARTNER={name:'Suresh Babu',rating:4.8,trips:1260,vehicle:'Bike, TG 00 AB 1234',phone:'+91 98••• ••214'};
+const hosp=id=>HOSP.find(h=>h.id===id), bank=id=>BANKS.find(b=>b.id===id), comp=id=>COMPS.find(c=>c.id===id);
+
+let STOCK={};
+
+/* ---------- geometry ---------- */
+function mk(points){
+  const pts=points.filter((p,i)=>i===0||p.x!==points[i-1].x||p.y!==points[i-1].y);
+  const cum=[0]; for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y));
+  return {pts,cum,len:cum[cum.length-1]};
+}
+function manhattan(a,b,hFirst){const m=hFirst?{x:b.x,y:a.y}:{x:a.x,y:b.y};return mk([a,m,b])}
+function at(path,d){
+  d=clamp(d,0,path.len); let i=1; while(i<path.pts.length-1&&path.cum[i]<d)i++;
+  if(path.pts.length<2)return {x:path.pts[0].x,y:path.pts[0].y,ang:0};
+  const a=path.pts[i-1],b=path.pts[i],seg=path.cum[i]-path.cum[i-1]||1,t=(d-path.cum[i-1])/seg;
+  return {x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,ang:Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI};
+}
+const routeFor=(b,h)=>manhattan(b.p,h.p,(b.c+b.r)%2===0);
+
+/* ---------- illustrative fee estimator ---------- */
+function pricing(c,units,km,urgent){
+  const items=c.fee*units, delivery=Math.round(40+km*14), priority=urgent?60:0, platform=25;
+  const gst=Math.round((delivery+priority+platform)*.18);
+  const total=items+delivery+priority+platform+gst;
+  const toPartner=Math.round((delivery+priority)*.8);
+  return {items,delivery,priority,platform,gst,total,toBank:items,toPartner,toPlatform:delivery+priority+platform-toPartner};
+}
+function makeOrder(o){
+  const km=routeFor(bank(o.bankId),hosp(o.hospId)).len*KM;
+  return {...o,km,p:pricing(comp(o.comp),o.units,km,o.urgent)};
+}
+
+/* ---------- state ---------- */
+const S={
+  role:'user',step:1,locState:'Delhi',locDistrict:'New Delhi',locCity:'New Delhi',authMode:'login',hospId:'h1',group:'B+',comp:'prbc',bankId:null,units:1,
+  patient:'Ravi Kumar',phone:'9876543210',urgent:false,rx:null,rxFile:null,payError:'',user:null,
+  method:'upi',paying:false,paid:false,
+  orders:[],
+  activeId:null,sim:null,speed:2,paused:false,online:true,otpErr:false,bankView:'b1',payTxn:null
+};
+
+const LOCATIONS={
+ 'Delhi':['New Delhi','Central Delhi','South Delhi','North Delhi','Shahdara'],
+ 'Maharashtra':['Mumbai City','Mumbai Suburban','Pune','Nagpur','Nashik'],
+ 'Karnataka':['Bengaluru Urban','Mysuru','Belagavi','Dharwad','Dakshina Kannada'],
+ 'Tamil Nadu':['Chennai','Coimbatore','Madurai','Salem','Tiruchirappalli'],
+ 'Telangana':['Hyderabad','Rangareddy','Medchal-Malkajgiri','Warangal','Nizamabad'],
+ 'Uttar Pradesh':['Lucknow','Varanasi','Prayagraj','Kanpur Nagar','Gautam Buddha Nagar'],
+ 'Gujarat':['Ahmedabad','Surat','Vadodara','Rajkot','Gandhinagar'],
+ 'West Bengal':['Kolkata','Howrah','Darjeeling','North 24 Parganas','Paschim Bardhaman'],
+ 'Rajasthan':['Jaipur','Jodhpur','Udaipur','Kota','Ajmer'],
+ 'Kerala':['Thiruvananthapuram','Ernakulam','Kozhikode','Thrissur','Kollam'],
+ 'Andhra Pradesh':['Visakhapatnam','NTR','Guntur','Tirupati','Kurnool'],
+ 'Madhya Pradesh':['Bhopal','Indore','Gwalior','Jabalpur','Ujjain'],
+ 'Punjab':['Ludhiana','Amritsar','Jalandhar','Patiala','SAS Nagar'],
+ 'Haryana':['Gurugram','Faridabad','Panchkula','Hisar','Karnal'],
+ 'Odisha':['Khordha','Cuttack','Puri','Sambalpur','Ganjam'],
+ 'Assam':['Kamrup Metropolitan','Dibrugarh','Cachar','Jorhat','Sonitpur'],
+ 'Bihar':['Patna','Gaya','Muzaffarpur','Bhagalpur','Darbhanga'],
+ 'Jharkhand':['Ranchi','East Singhbhum','Dhanbad','Bokaro','Deoghar'],
+ 'Chhattisgarh':['Raipur','Durg','Bilaspur','Korba','Bastar'],
+ 'Uttarakhand':['Dehradun','Haridwar','Nainital','Udham Singh Nagar','Almora'],
+ 'Himachal Pradesh':['Shimla','Kangra','Mandi','Solan','Kullu'],
+ 'Goa':['North Goa','South Goa'], 'Tripura':['West Tripura','Gomati','Sepahijala'],
+ 'Meghalaya':['East Khasi Hills','West Garo Hills','Ri-Bhoi'], 'Manipur':['Imphal West','Imphal East','Thoubal'],
+ 'Mizoram':['Aizawl','Lunglei','Kolasib'], 'Nagaland':['Kohima','Dimapur','Mokokchung'],
+ 'Arunachal Pradesh':['Itanagar Capital Region','Papum Pare','Tawang'], 'Sikkim':['Gangtok','Namchi','Gyalshing'],
+ 'Jammu and Kashmir':['Srinagar','Jammu','Anantnag','Baramulla'], 'Ladakh':['Leh','Kargil'],
+ 'Puducherry':['Puducherry','Karaikal'], 'Chandigarh':['Chandigarh'],
+ 'Andaman and Nicobar Islands':['South Andaman','North and Middle Andaman'], 'Dadra and Nagar Haveli and Daman and Diu':['Dadra and Nagar Haveli','Daman','Diu'],
+ 'Lakshadweep':['Lakshadweep']
+};
+const CITIES={'New Delhi':['New Delhi'],'Central Delhi':['Karol Bagh','Daryaganj'],'South Delhi':['Saket','Hauz Khas'],'North Delhi':['Civil Lines','Model Town'],'Shahdara':['Shahdara','Dilshad Garden']};
+const loc=()=>({state:S.locState||'Delhi',district:S.locDistrict||'New Delhi',city:S.locCity||'New Delhi'});
+function renderLocation(){
+ const L=loc(), st=$('#locState'),di=$('#locDistrict'),ci=$('#locCity'); if(!st)return;
+ st.innerHTML=Object.keys(LOCATIONS).map(x=>'<option'+(x===L.state?' selected':'')+'>'+esc(x)+'</option>').join('');
+ di.innerHTML=LOCATIONS[L.state].map(x=>'<option'+(x===L.district?' selected':'')+'>'+esc(x)+'</option>').join('');
+ const towns=CITIES[L.district]||[L.district];ci.innerHTML=towns.map(x=>'<option'+(x===L.city?' selected':'')+'>'+esc(x)+'</option>').join('');
+}
+const API='/api';
+const tok=()=>localStorage.getItem('bloodBooking.token');
+async function api(path,opts={}){
+  const headers=Object.assign({},opts.headers||{});
+  if(tok())headers.Authorization='Bearer '+tok();
+  let body=opts.body;
+  if(opts.json){headers['Content-Type']='application/json';body=JSON.stringify(opts.json)}
+  const r=await fetch(API+path,{method:opts.method||'GET',headers,body});
+  let data=null;try{data=await r.json()}catch(e){}
+  if(!r.ok){const err=new Error((data&&data.error)||'Request failed');err.status=r.status;throw err}
+  return data;
+}
+async function authCheck(){
+  const show=(a)=>{$('#auth').hidden=!a;$('#app').hidden=a};
+  if(!tok()){show(true);return}
+  try{
+    const me=await api('/me');S.user=me;S.patient=me.name;S.phone=me.phone;
+    const [stock,orders]=await Promise.all([api('/stock'),api('/orders')]);
+    STOCK=stock;S.orders=orders;show(false);renderAll();
+  }catch(e){
+    if(e.status===401)localStorage.removeItem('bloodBooking.token');
+    else $('#authMsg').textContent='Cannot reach the server. Is it running? ('+e.message+')';
+    show(true);
+  }
+}
+function authMode(mode){S.authMode=mode;$('#authTitle').textContent=mode==='signup'?'Create your account':'Sign in';$('#authNameWrap').hidden=mode!=='signup';$$('[data-act="authMode"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===mode));}
+async function authenticate(){
+  const phone=$('#authPhone').value.replace(/\D/g,''),name=$('#authName').value.trim(),password=$('#authPass').value,msg=$('#authMsg');
+  msg.textContent='';
+  if(!/^\d{10}$/.test(phone)||(S.authMode==='signup'&&name.length<2)||password.length<6){msg.textContent='Enter a valid 10-digit mobile number'+(S.authMode==='signup'?', your name':'')+' and a password of at least 6 characters.';return}
+  try{
+    const d=await api('/auth/'+(S.authMode==='signup'?'signup':'login'),{method:'POST',json:{phone,name,password}});
+    localStorage.setItem('bloodBooking.token',d.token);await authCheck();
+  }catch(e){msg.textContent=e.message}
+}
+function logout(){localStorage.removeItem('bloodBooking.token');location.reload()}
+
+const activeOrder=()=>S.orders.find(o=>o.id===S.activeId)||null;
+const stockOf=(bid,g,c)=>STOCK[bid][g][c];
+const curPrice=()=>{const b=bank(S.bankId),h=hosp(S.hospId);const km=routeFor(b,h).len*KM;return pricing(comp(S.comp),S.units,km,S.urgent)};
+
+const STAGES=[
+ ['Order placed','Waiting for the blood bank'],
+ ['Blood bank accepted','Prescription checked'],
+ ['Delivery partner assigned','Nearest partner heads to the blood bank'],
+ ['Packed in cold box','Sealed at 2 to 6 °C'],
+ ['Picked up','Partner has the box'],
+ ['On the way to hospital','Location preview shown'],
+ ['Delivered','Handed over with OTP']
+];
+
+/* ---------- simulation ---------- */
+const V1=70,V2=60;
+function startSim(o){
+  const b=bank(o.bankId),h=hosp(o.hospId),flip=(b.c+b.r)%2===0;
+  const r2=manhattan(b.p,h.p,flip);
+  const start=P((b.c+2)%6,(b.r+2)%5);
+  const r1=manhattan(start,b.p,!flip);
+  const T={accept:2,assign:4,pack:8};
+  const arriveBank=T.assign+r1.len/V1, pick=Math.max(arriveBank,T.pack)+2, go=pick+1, arriveHosp=go+r2.len/V2;
+  S.sim={t:0,r1,r2,T,arriveBank,pick,go,arriveHosp,delivered:false,otp:String(1000+Math.floor(Math.random()*9000)),times:[new Date()],key:'0:0'};
+  S.otpErr=false;S.paused=false;
+}
+function statusAt(sim){
+  const t=sim.t; if(sim.delivered)return 6;
+  if(t>=sim.go)return 5; if(t>=sim.pick)return 4; if(t>=sim.T.pack)return 3; if(t>=sim.T.assign)return 2; if(t>=sim.T.accept)return 1; return 0;
+}
+const arrived=sim=>sim&&!sim.delivered&&sim.t>=sim.arriveHosp;
+function partnerPos(sim){
+  const t=sim.t; if(t<sim.T.assign)return null;
+  if(t<sim.arriveBank)return at(sim.r1,(t-sim.T.assign)*V1);
+  if(t<sim.go)return at(sim.r1,sim.r1.len);
+  if(t<sim.arriveHosp)return at(sim.r2,(t-sim.go)*V2);
+  return at(sim.r2,sim.r2.len);
+}
+function etaText(sim){
+  if(sim.delivered)return 'Delivered'; if(arrived(sim))return 'Arrived';
+  return Math.max(1,Math.ceil((sim.arriveHosp-sim.t)*.6))+' min';
+}
+function leftKm(sim){
+  const t=sim.t; if(sim.delivered||t>=sim.arriveHosp)return 0;
+  if(t<sim.go)return sim.r2.len*KM + (t<sim.arriveBank?(sim.r1.len-(Math.max(0,t-sim.T.assign))*V1)*KM:0);
+  return Math.max(0,(sim.arriveHosp-t)*V2)*KM;
+}
+function tempAt(sim){const t=sim.t;return (3.6+Math.sin(t*.9)*.5+Math.sin(t*2.3)*.2)}
+function advance(dt){
+  const sim=S.sim; if(!sim||S.paused||sim.delivered)return;
+  sim.t+=dt*S.speed;
+  const o=activeOrder(), st=statusAt(sim);
+  if(o&&st!==o.status){o.status=st;sim.times[st]=new Date();api('/orders/'+o.id+'/status',{method:'PATCH',json:{status:st}}).catch(()=>{})}
+  const key=st+':'+(arrived(sim)?1:0);
+  if(key!==sim.key){sim.key=key;renderAll()}else updateLive();
+}
+function confirmDelivery(code){
+  const sim=S.sim,o=activeOrder(); if(!sim||!arrived(sim))return;
+  if(code!==sim.otp){S.otpErr=true;renderAll();return}
+  S.otpErr=false;sim.delivered=true;o.status=6;api('/orders/'+o.id+'/status',{method:'PATCH',json:{status:6}}).catch(()=>{});sim.times[6]=new Date();sim.key='6:0';renderAll();
+}
+
+/* ---------- map ---------- */
+function createMap(host,onPick){
+  const W=1000,H=660,ex=[-30,...GX,1030],ey=[-30,...GY,690];
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Schematic map of hospitals and blood banks in the service area" xmlns="http://www.w3.org/2000/svg"><rect class="m-land" width="'+W+'" height="'+H+'"/>';
+  for(let i=0;i<ex.length-1;i++)for(let j=0;j<ey.length-1;j++){
+    s+='<rect class="m-block" x="'+(ex[i]+9)+'" y="'+(ey[j]+9)+'" width="'+(ex[i+1]-ex[i]-18)+'" height="'+(ey[j+1]-ey[j]-18)+'" rx="6"/>';
+  }
+  [[0,2],[3,0],[4,3],[2,1]].forEach(([c,r])=>{
+    s+='<rect class="m-park" x="'+(GX[c]+14)+'" y="'+(GY[r]+14)+'" width="'+(GX[c+1]-GX[c]-28)+'" height="'+(GY[r+1]-GY[r]-28)+'" rx="10"/>';
+  });
+  s+='<path class="m-water" d="M-30 505 C150 430 270 650 480 570 S850 380 1030 450"/>';
+  GX.forEach(x=>{s+='<line class="m-edge" x1="'+x+'" y1="-30" x2="'+x+'" y2="690"/>'});
+  GY.forEach(y=>{s+='<line class="m-edge" x1="-30" y1="'+y+'" x2="1030" y2="'+y+'"/>'});
+  GX.forEach(x=>{s+='<line class="m-road" x1="'+x+'" y1="-30" x2="'+x+'" y2="690"/>'});
+  GY.forEach(y=>{s+='<line class="m-road" x1="-30" y1="'+y+'" x2="1030" y2="'+y+'"/>'});
+  s+='<text class="m-lbl" x="14" y="'+(GY[2]-12)+'">MG ROAD</text><text class="m-lbl" x="'+(GX[3]+120)+'" y="'+(GY[1]-12)+'">STATION ROAD</text>';
+  s+='<text class="m-lbl" x="'+(GX[2]+10)+'" y="620" >RIVER</text>';
+  s+='<line x1="24" y1="636" x2="149" y2="636" stroke="var(--map-text)" stroke-width="3"/><text class="m-lbl" x="24" y="624">0.5 km</text>';
+  s+='<g class="routes"></g><g class="marks"></g><g class="pm" style="display:none"><circle class="pulse" r="22"/><circle r="14" fill="var(--ink)"/><path d="M0 -8 L7 7 L0 3.5 L-7 7z" fill="var(--bg)" class="arrow"/></g></svg>';
+  host.innerHTML=s;
+  const svg=host.firstChild,routes=$('.routes',svg),marks=$('.marks',svg),pm=$('.pm',svg),arrow=$('.arrow',svg);
+  svg.addEventListener('click',e=>{const m=e.target.closest('.mk');if(m&&onPick)onPick(m.dataset.kind,m.dataset.id)});
+  const pts=p=>p.pts.map(q=>q.x+','+q.y).join(' ');
+  function refresh(o){
+    o=o||{};
+    let h='';
+    HOSP.forEach(x=>{
+      const on=o.deliver===x.id;
+      h+='<g class="mk" data-kind="h" data-id="'+x.id+'" transform="translate('+x.p.x+' '+x.p.y+')"><title>'+esc(x.name)+'</title><circle class="halo" r="20"/>'+(on?'<circle class="ring" r="25"/>':'')+'<circle r="14" fill="var(--blue)"/><path d="M-2.5 -8h5v5.5h5.5v5h-5.5v5.5h-5v-5.5h-5.5v-5h5.5z" fill="#fff"/><text y="'+(x.r===4?-30:36)+'" text-anchor="middle">'+esc(x.name)+'</text></g>';
+    });
+    BANKS.forEach(x=>{
+      const on=o.sel===x.id,dim=o.dim&&o.dim.has(x.id);
+      h+='<g class="mk'+(dim?' dim':'')+'" data-kind="b" data-id="'+x.id+'" transform="translate('+x.p.x+' '+x.p.y+')"><title>'+esc(x.name)+'</title><circle class="halo" r="20"/>'+(on?'<circle class="ring" r="25"/>':'')+'<circle r="14" fill="var(--accent)"/><path d="M0 -8 C3.5 -3 6.5 0 6.5 3.5 a6.5 6.5 0 0 1 -13 0 C-6.5 0 -3.5 -3 0 -8z" fill="#fff"/><text y="'+(x.r===0?-30:36)+'" text-anchor="middle">'+esc(x.name)+'</text></g>';
+    });
+    marks.innerHTML=h;
+    routes.innerHTML=(o.pre?'<polyline class="r-pre" points="'+pts(o.pre)+'"/>':'')+(o.main?'<polyline class="r-main" points="'+pts(o.main)+'"/>':'');
+  }
+  function setPartner(p){
+    if(!p){pm.style.display='none';return}
+    pm.style.display='';pm.setAttribute('transform','translate('+p.x.toFixed(1)+' '+p.y.toFixed(1)+')');
+    arrow.setAttribute('transform','rotate('+(p.ang+90).toFixed(0)+')');
+  }
+  refresh();
+  return {refresh,setPartner};
+}
+
+/* ---------- render: shell ---------- */
+const ROLES=[['user','Patient / attendant'],['bank','Blood centre'],['partner','Delivery partner'],['admin','Coordinator']];
+function renderTabs(){
+  $('#tabs').innerHTML=ROLES.map(([id,l])=>'<button class="tab" role="tab" data-role="'+id+'" aria-selected="'+(S.role===id)+'">'+l+'</button>').join('');
+  ROLES.forEach(([id])=>{$('#v-'+id).hidden=S.role!==id});
+}
+const pillFor=st=>st===6?'<span class="pill good">Delivered</span>':st>=4?'<span class="pill blue">'+STAGES[st][0]+'</span>':'<span class="pill warn">'+STAGES[st][0]+'</span>';
+function breakdown(p,c,units){
+  return '<div class="kv"><span>Processing fee ('+units+' × '+inr(c.fee)+')</span><span class="tnum">'+inr(p.items)+'</span></div>'+
+  '<div class="kv"><span>Delivery fee</span><span class="tnum">'+inr(p.delivery)+'</span></div>'+
+  (p.priority?'<div class="kv"><span>Emergency priority</span><span class="tnum">'+inr(p.priority)+'</span></div>':'')+
+  '<div class="kv"><span>Platform fee</span><span class="tnum">'+inr(p.platform)+'</span></div>'+
+  '<div class="kv"><span>GST 18% on service charges</span><span class="tnum">'+inr(p.gst)+'</span></div>'+
+  '<div class="kv total"><span>Total</span><span class="tnum">'+inr(p.total)+'</span></div>';
+}
+
+/* ---------- render: user app ---------- */
+let mapUser,mapAdmin;
+function renderStepper(){
+  const items=[['Find','Choose location'],['Request','Details and prescription'],['Payment','Preview checkout'],['Status','Order progress']];
+  $('#stepper').innerHTML=items.map(([t,s],i)=>{
+    const n=i+1,cls=n===S.step?'cur':n<S.step?'done':'';
+    const locked=S.step===4||n>S.step;
+    return '<li><button class="'+cls+'" data-act="goto" data-v="'+n+'"'+(locked?' disabled':'')+'><span class="n">'+(n<S.step?'✓':n)+'</span><span><div class="t">'+t+'</div><div class="s">'+s+'</div></span></button></li>';
+  }).join('');
+}
+function findHTML(){
+  const h=hosp(S.hospId),c=comp(S.comp);
+  const list=BANKS.map(b=>{const r=routeFor(b,h),st=stockOf(b.id,S.group,S.comp);return {b,km:r.len*KM,st,eta:Math.round(12+r.len*KM/.42)}}).sort((x,y)=>x.km-y.km);
+  return '<div class="card stack"><h2>Find blood</h2>'+
+  '<div class="note" style="padding:8px 10px;background:var(--blue-soft);border-radius:9px">Selected area: <b>'+esc(loc().city)+', '+esc(loc().district)+', '+esc(loc().state)+'</b> · Facility results are Delhi directory examples in this preview.</div>'+
+  '<div class="field"><label for="hosp">Deliver to hospital</label><select id="hosp" data-bind="hospId">'+HOSP.map(x=>'<option value="'+x.id+'"'+(x.id===S.hospId?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select></div>'+
+  '<div class="field"><span class="label">Blood group</span><div class="chips">'+GROUPS.map(g=>'<button class="chip" data-act="group" data-v="'+g+'" aria-pressed="'+(g===S.group)+'">'+g+'</button>').join('')+'</div></div>'+
+  '<div class="field"><label for="comp">Component</label><select id="comp" data-bind="comp">'+COMPS.map(x=>'<option value="'+x.id+'"'+(x.id===S.comp?' selected':'')+'>'+x.name+'</option>').join('')+'</select></div></div>'+
+  '<div class="banklist">'+list.map(({b,km,st,eta})=>{
+    const out=st.units===0;
+    return '<div class="bank'+(out?' off':'')+'"><div class="row between"><span class="nm">'+esc(b.name)+'</span>'+(out?'<span class="pill bad">Out of stock</span>':st.units<4?'<span class="pill warn">'+st.units+' units left</span>':'<span class="pill good">'+st.units+' units</span>')+'</div>'+
+    '<div class="meta"><span><b>'+km.toFixed(1)+' km</b> away</span><span>About <b>'+eta+' min</b></span><span>Fee <b>'+inr(c.fee)+'</b> / unit</span>'+(out?'':'<span>Earliest expiry <b>'+st.exp+' d</b></span>')+'</div>'+
+    '<button class="btn primary small" data-act="book" data-v="'+b.id+'"'+(out?' disabled':'')+'>Book from here</button></div>';
+  }).join('')+'</div>';
+}
+function orderHTML(){
+  const b=bank(S.bankId),h=hosp(S.hospId),c=comp(S.comp),st=stockOf(b.id,S.group,S.comp),max=Math.min(4,st.units),p=curPrice();
+  return '<div class="card stack"><div class="row between"><h2>Your order</h2><button class="linkbtn" data-act="goto" data-v="1">Change blood bank</button></div>'+
+  '<div class="bank"><div class="nm">'+esc(b.name)+'</div><div class="meta"><span>To <b>'+esc(h.name)+'</b></span><span><b>'+S.group+'</b> '+c.name+'</span></div></div>'+
+  '<div class="field"><span class="label">Units</span><div class="row"><div class="seg"><button data-act="units" data-v="-1" aria-label="One less unit">−</button><button disabled style="cursor:default;color:var(--ink)">'+S.units+'</button><button data-act="units" data-v="1" aria-label="One more unit"'+(S.units>=max?' disabled':'')+'>+</button></div><span class="note">Up to '+max+' units per order</span></div></div>'+
+  '<div class="field"><label for="patient">Patient name</label><input type="text" id="patient" data-in="patient" value="'+esc(S.patient)+'" autocomplete="off"></div>'+
+  '<div class="field"><label for="phone">Attendant phone</label><input type="tel" id="phone" data-in="phone" value="'+esc(S.phone)+'" inputmode="numeric" maxlength="10"></div>'+
+  '<div class="field"><span class="label">Priority</span><div class="seg" style="align-self:flex-start"><button data-act="urgent" data-v="0" aria-pressed="'+(!S.urgent)+'">Normal</button><button data-act="urgent" data-v="1" aria-pressed="'+S.urgent+'">Emergency (+₹60)</button></div></div>'+
+  '<div class="field"><span class="label">Doctor\'s prescription</span>'+
+   (S.rx?'<div class="row"><span class="pill good">✓ Attached</span><span class="mono" style="overflow-wrap:anywhere">'+esc(S.rx)+'</span><button class="linkbtn" data-act="rxclear">Remove</button></div>':
+   '<div class="row"><label class="btn small" for="rxfile" style="cursor:pointer">Upload file</label><input type="file" id="rxfile" accept="image/*,application/pdf" style="display:none"></div>')+
+   '</div></div>'+
+  '<div class="card"><h3 style="margin-bottom:6px">Fee breakdown</h3>'+breakdown(p,c,S.units)+
+  '<p class="note" style="margin-top:8px">Illustrative service fee only. Confirm availability, eligibility, compatibility and all charges with the licensed blood centre and treating hospital.</p></div>'+
+  '<button class="btn primary block" id="toPay" data-act="topay">Continue to payment</button><div class="note" id="orderHint"></div>';
+}
+function payHTML(){
+  const b=bank(S.bankId),c=comp(S.comp),p=curPrice();
+  if(S.paid)return '<div class="card empty"><div class="tick"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h2>Checkout preview complete</h2><p class="muted">Preview reference <span class="mono">'+S.payTxn+'</span></p><p class="note">Sending your order to '+esc(b.name)+'…</p></div>';
+  const m=S.method;
+  const body=(S.payError?'<div class="err">'+esc(S.payError)+'</div>':'')+'<p class="note">Payment provider integration is not configured. The button below advances the coursework preview only; it does not collect payment details or charge money.</p>';
+  return '<div class="card stack"><div class="row between"><h2>Payment</h2><button class="linkbtn" data-act="goto" data-v="2">Back to order</button></div>'+
+   '<div class="bank"><div class="nm">'+S.units+' × '+S.group+' '+c.name+'</div><div class="meta"><span>From <b>'+esc(b.name)+'</b></span><span>To <b>'+esc(hosp(S.hospId).name)+'</b></span></div></div>'+
+   '<div class="gw"><div class="gw-h"><b>Payment provider</b><span class="pill warn">Not connected</span></div><div class="gw-b">'+
+   '<div class="seg" style="align-self:flex-start">'+[['upi','UPI'],['card','Card'],['nb','Net banking']].map(([id,l])=>'<button data-act="method" data-v="'+id+'" aria-pressed="'+(m===id)+'">'+l+'</button>').join('')+'</div>'+body+
+   (S.paying?'<button class="btn primary block" disabled><span class="spin"></span>Processing payment</button>':'<button class="btn primary block" data-act="pay">Continue preview · '+inr(p.total)+'</button>')+
+   '<p class="note">Checkout is a visual preview. No payment provider is connected and no charge will be made.</p></div></div></div>'+
+   '<div class="card"><h3 style="margin-bottom:6px">Fee breakdown</h3>'+breakdown(p,c,S.units)+'</div>';
+}
+function timelineHTML(o,sim){
+  const arr=arrived(sim);
+  return '<ul class="tl">'+STAGES.map((s,i)=>{
+    const done=i<o.status||(i===6&&o.status===6),now=i===o.status&&o.status<6;
+    const cls=done?'done':now?'now':'wait';
+    const sub=i===5&&arr?'Partner has arrived at the hospital':s[1];
+    return '<li class="'+cls+'"><span class="ic">'+(done?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>':'')+'</span><div><div class="tt">'+s[0]+'</div><div class="ts">'+sub+'</div></div><span class="ts tnum">'+(sim.times[i]?clock(sim.times[i]):'')+'</span></li>';
+  }).join('')+'</ul>';
+}
+function trackHTML(){
+  const o=activeOrder(),sim=S.sim; if(!o||!sim)return '<div class="card empty"><p>No active order yet.</p></div>';
+  const b=bank(o.bankId),h=hosp(o.hospId),c=comp(o.comp),arr=arrived(sim);
+  if(sim.delivered){
+    return '<div class="card stack"><div class="row"><div class="tick"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div><h2>Delivered</h2><p class="muted">'+o.units+' × '+o.group+' '+c.name+' at '+esc(h.name)+'</p></div></div>'+
+    '<div class="note">Order <span class="mono">'+o.id+'</span> · Transaction <span class="mono">'+o.txn+'</span></div></div>'+
+    '<div class="card"><h3 style="margin-bottom:6px">Receipt</h3>'+breakdown(o.p,c,o.units)+'</div>'+
+    '<div class="card"><h3 style="margin-bottom:8px">Order timeline</h3>'+timelineHTML(o,sim)+'</div>'+
+    '<button class="btn primary block" data-act="again">Place another order</button>';
+  }
+  return '<div class="card stack"><div class="row between"><span class="mono">'+o.id+'</span>'+pillFor(o.status)+'</div>'+
+   '<div><div class="muted small">'+(arr?'Your partner is at the hospital gate':'Estimated arrival')+'</div><div class="big tnum" data-live="eta">'+etaText(sim)+'</div></div>'+
+   '<div class="bar" aria-hidden="true"><i data-live="bar" style="width:'+clamp(sim.t/sim.arriveHosp*100,0,100).toFixed(1)+'%"></i></div>'+
+   '<div class="row between small muted"><span>'+esc(b.name)+'</span><span>'+esc(h.name)+'</span></div>'+
+   '<div class="row"><span class="muted small">Preview speed</span><div class="seg">'+[1,2,5].map(v=>'<button data-act="speed" data-v="'+v+'" aria-pressed="'+(S.speed===v)+'">'+v+'×</button>').join('')+'</div><button class="btn small" data-act="pause">'+(S.paused?'Resume':'Pause')+'</button></div></div>'+
+   (o.status>=2?'<div class="card"><div class="row"><div class="avatar">SB</div><div class="grow"><div style="font-weight:700">'+PARTNER.name+'</div><div class="muted small">★ '+PARTNER.rating+' · '+PARTNER.trips+' trips · '+PARTNER.vehicle+'</div></div></div><div class="row between" style="margin-top:10px"><span class="mono">'+PARTNER.phone+'</span><span class="note">Distance left <b data-live="left">'+leftKm(sim).toFixed(1)+'</b> km</span></div></div>':'')+
+   '<div class="card"><div class="row between"><h3>Cold chain</h3><span class="pill good">Within range</span></div><div class="row between" style="margin:8px 0 6px"><span class="muted small">Box temperature (illustrative)</span><b class="tnum"><span data-live="temp">'+tempAt(sim).toFixed(1)+'</span> °C</b></div><div class="bar cold" aria-hidden="true"><i data-live="tbar" style="width:'+clamp((tempAt(sim)-2)/4*100,0,100).toFixed(0)+'%"></i></div><div class="row between note" style="margin-top:4px"><span>2 °C</span><span>6 °C</span></div></div>'+
+   '<div class="card"><h3 style="margin-bottom:8px">Order status</h3>'+timelineHTML(o,sim)+'</div>'+
+   '<div class="card stack"><div><h3>Handover OTP</h3><p class="note">Share this code with the delivery partner when they reach the ward.</p></div><div><span class="otp">'+sim.otp+'</span></div>'+
+   (arr?'<button class="btn primary" data-act="simotp">Confirm preview handover</button>':'<p class="note">The OTP is checked when the partner arrives.</p>')+'</div>';
+}
+function renderUser(){
+  renderLocation();
+  renderStepper();
+  const panel=$('#panel');
+  panel.innerHTML=S.step===1?findHTML():S.step===2?orderHTML():S.step===3?payHTML():trackHTML();
+  if(S.step===2)updateOrderBtn();
+  const h=hosp(S.hospId),o=activeOrder();
+  let opt={deliver:S.hospId},note='Click a pin to choose';
+  if(S.step===1){
+    const dim=new Set(BANKS.filter(b=>stockOf(b.id,S.group,S.comp).units===0).map(b=>b.id));
+    opt={deliver:S.hospId,dim,sel:S.bankId};
+    mapUser.setPartner(null);
+  }else if(S.step===2||S.step===3){
+    opt={deliver:S.hospId,sel:S.bankId,main:routeFor(bank(S.bankId),h)};note='Planned route';mapUser.setPartner(null);
+  }else if(o&&S.sim){
+    const sim=S.sim;opt={deliver:o.hospId,sel:o.bankId,main:sim.r2,pre:o.status<4?sim.r1:null};note='Illustrative tracking';
+    mapUser.setPartner(partnerPos(sim));
+  }
+  $('#mapnote').textContent=note;
+  mapUser.refresh(opt);
+}
+function updateOrderBtn(){
+  const btn=$('#toPay');if(!btn)return;
+  const ok=S.patient.trim().length>1&&/^\d{10}$/.test(S.phone)&&!!S.rx;
+  btn.disabled=!ok;
+  const hint=$('#orderHint');
+  hint.textContent=ok?'':(!S.rx?'Attach a prescription to continue.':!/^\d{10}$/.test(S.phone)?'Enter a 10 digit phone number.':'Enter the patient name.');
+}
+
+/* ---------- render: blood bank ---------- */
+function renderBank(){
+  const b=bank(S.bankView),orders=S.orders.filter(o=>o.bankId===b.id);
+  const rows=GROUPS.map(g=>'<tr><td>'+g+'</td>'+COMPS.map(c=>{const s=stockOf(b.id,g,c.id),cls=s.units===0?'zero':s.units<4?'low':'ok';return '<td><span class="c '+cls+'"><b>'+s.units+'</b><small>'+(s.units?'exp '+s.exp+' d':'none')+'</small></span></td>'}).join('')+'</tr>').join('');
+  $('#v-bank').innerHTML=
+   '<div class="row between"><div><h2>Blood centre dashboard</h2><p class="muted">Inventory, incoming orders and prescription checks</p></div><div class="field" style="min-width:240px"><label for="bsel">Blood bank</label><select id="bsel" data-bind="bankView">'+BANKS.map(x=>'<option value="'+x.id+'"'+(x.id===b.id?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'</select></div></div>'+
+   '<div class="card"><div class="row between" style="margin-bottom:8px"><h3>Preview inventory (units)</h3><span class="note">Red is empty, amber is under 4 units</span></div><div class="tw"><table class="inv"><thead><tr><th>Group</th>'+COMPS.map(c=>'<th style="text-align:center">'+c.name+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
+   '<div class="card"><h3 style="margin-bottom:8px">Order queue</h3>'+(orders.length?'<div class="tw"><table><thead><tr><th>Order</th><th>Patient</th><th>Item</th><th class="r">Units</th><th>Prescription</th><th>Status</th><th class="r">You receive</th></tr></thead><tbody>'+orders.map(o=>'<tr><td class="mono">'+o.id+'</td><td>'+esc(o.patient)+'</td><td>'+o.group+' '+comp(o.comp).name+'</td><td class="r">'+o.units+'</td><td><span class="pill good">Review required</span></td><td>'+pillFor(o.status)+'</td><td class="r">'+inr(o.p.toBank)+'</td></tr>').join('')+'</tbody></table></div>':'<p class="muted">No orders for this blood bank yet.</p>')+'</div>';
+}
+
+/* ---------- render: delivery partner ---------- */
+function renderPartner(){
+  const o=activeOrder(),sim=S.sim,done=o&&o.status===6,live=o&&!done;
+  const earn=640+(done?o.p.toPartner:0),trips=7+(done?1:0);
+  let job='';
+  if(!S.online)job='<div class="card empty"><h3>You are offline</h3><p class="muted">Go online to receive delivery requests.</p></div>';
+  else if(live){
+    const b=bank(o.bankId),h=hosp(o.hospId),arr=arrived(sim);
+    const stage=['Incoming request. Request shown in preview.','Request accepted.','Head to the blood bank.','Collect the sealed cold box.','Box collected. Starting the trip.',arr?'You have arrived. Ask for the OTP and confirm the handover.':'Drive to the hospital. The user can see you live.'][o.status];
+    job='<div class="card stack"><div class="row between"><h3>Current delivery</h3>'+pillFor(o.status)+'</div><p>'+stage+'</p>'+
+     '<div class="kv"><span class="muted">Pickup</span><span style="text-align:right"><b>'+esc(b.name)+'</b><br><span class="small muted">'+esc(b.addr)+'</span></span></div>'+
+     '<div class="kv"><span class="muted">Drop</span><span style="text-align:right"><b>'+esc(h.name)+'</b><br><span class="small muted">'+esc(h.addr)+'</span></span></div>'+
+     '<div class="kv"><span class="muted">Distance left</span><span class="tnum"><b data-live="left">'+leftKm(sim).toFixed(1)+'</b> km · <b data-live="eta">'+etaText(sim)+'</b></span></div>'+
+     '<div class="kv"><span class="muted">Your payout</span><b class="tnum">'+inr(o.p.toPartner)+'</b></div>'+
+     (arr?'<div class="field"><label for="otpIn">Handover OTP</label><input type="text" id="otpIn" inputmode="numeric" maxlength="4" placeholder="4 digit code" autocomplete="off">'+(S.otpErr?'<span class="err">That code does not match. Ask the user again.</span>':'')+'</div><button class="btn primary block" data-act="partnerotp">Confirm delivery</button><p class="note">Preview handover code: <span class="mono">'+sim.otp+'</span></p>':'')+'</div>';
+  }else if(done){
+    job='<div class="card empty"><div class="tick"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3>Delivery complete</h3><p class="muted">'+inr(o.p.toPartner)+' shown as preview earnings. No payout is issued.</p></div>';
+  }else job='<div class="card empty"><h3>Waiting for requests</h3><p class="muted">Place an order in the User app and the job appears here.</p><button class="btn" data-act="goUser">Open User app</button></div>';
+  $('#v-partner').innerHTML='<div><h2>Delivery partner app</h2><p class="muted">Partner workflow preview</p></div><div class="phone"><div class="phone-shell">'+
+   '<div class="card"><div class="row between"><div class="row"><div class="avatar">SB</div><div><b>'+PARTNER.name+'</b><div class="small muted">'+PARTNER.vehicle+'</div></div></div><div class="row"><span class="small">'+(S.online?'Online':'Offline')+'</span><button class="sw" role="switch" aria-checked="'+S.online+'" aria-label="Go online" data-act="online"></button></div></div></div>'+
+   '<div class="kpis" style="grid-template-columns:1fr 1fr"><div class="kpi"><div class="muted small">Today</div><div class="v">'+inr(earn)+'</div></div><div class="kpi"><div class="muted small">Trips</div><div class="v">'+trips+'</div></div></div>'+job+'</div></div>';
+}
+
+/* ---------- render: admin ---------- */
+function renderAdmin(){
+  const os=S.orders,sum=f=>os.reduce((a,o)=>a+f(o),0);
+  const live=os.filter(o=>o.status<6).length;
+  const kp=[['Orders today',os.length],['Delivered',os.filter(o=>o.status===6).length],['Collected from users',inr(sum(o=>o.p.total))],['Platform earnings',inr(sum(o=>o.p.toPlatform))],['Active deliveries',live]];
+  $('#v-admin').innerHTML='<div><h2>Admin panel</h2><p class="muted">Orders, payments and settlements across the whole platform</p></div>'+
+   '<div class="kpis">'+kp.map(([l,v])=>'<div class="kpi"><div class="muted small">'+l+'</div><div class="v">'+v+'</div></div>').join('')+'</div>'+
+   '<div class="split"><div class="stack"><div class="card"><h3 style="margin-bottom:8px">Orders</h3><div class="tw"><table><thead><tr><th>Order</th><th>Patient</th><th>Route</th><th>Item</th><th class="r">Total</th><th>Status</th></tr></thead><tbody>'+
+   os.map(o=>'<tr><td class="mono">'+o.id+'</td><td>'+esc(o.patient)+'</td><td>'+esc(bank(o.bankId).name)+' → '+esc(hosp(o.hospId).name)+'</td><td>'+o.units+' × '+o.group+' '+comp(o.comp).name+'</td><td class="r">'+inr(o.p.total)+'</td><td>'+pillFor(o.status)+'</td></tr>').join('')+'</tbody></table></div></div>'+
+   '<div class="card"><h3 style="margin-bottom:2px">Payment split</h3><p class="note" style="margin-bottom:8px">How each payment from the user is divided between the blood bank, delivery partner, platform and tax.</p><div class="tw"><table><thead><tr><th>Order</th><th class="r">User paid</th><th class="r">Blood bank</th><th class="r">Delivery partner</th><th class="r">Platform</th><th class="r">GST</th><th>Payout</th></tr></thead><tbody>'+
+   os.map(o=>'<tr><td class="mono">'+o.id+'</td><td class="r">'+inr(o.p.total)+'</td><td class="r">'+inr(o.p.toBank)+'</td><td class="r">'+inr(o.p.toPartner)+'</td><td class="r">'+inr(o.p.toPlatform)+'</td><td class="r">'+inr(o.p.gst)+'</td><td>'+(o.status===6?'<span class="pill good">Settled</span>':'<span class="pill warn">Held until delivery</span>')+'</td></tr>').join('')+'</tbody></table></div></div></div>'+
+   '<div class="card"><div class="row between" style="margin-bottom:10px"><h3>Order map preview</h3><span class="note">'+(live?'1 active delivery':'No active delivery')+'</span></div><div class="maphost" id="map-admin"></div></div></div>';
+  mapAdmin=createMap($('#map-admin'));
+  const o=activeOrder();
+  if(o&&S.sim&&o.status<6){mapAdmin.refresh({deliver:o.hospId,sel:o.bankId,main:S.sim.r2,pre:o.status<4?S.sim.r1:null});mapAdmin.setPartner(partnerPos(S.sim))}
+  else mapAdmin.refresh({});
+}
+
+/* ---------- live updates ---------- */
+function updateLive(){
+  const sim=S.sim;if(!sim)return;
+  $$('[data-live="eta"]').forEach(e=>e.textContent=etaText(sim));
+  $$('[data-live="left"]').forEach(e=>e.textContent=leftKm(sim).toFixed(1));
+  $$('[data-live="bar"]').forEach(e=>e.style.width=clamp(sim.t/sim.arriveHosp*100,0,100).toFixed(1)+'%');
+  const tp=tempAt(sim);
+  $$('[data-live="temp"]').forEach(e=>e.textContent=tp.toFixed(1));
+  $$('[data-live="tbar"]').forEach(e=>e.style.width=clamp((tp-2)/4*100,0,100).toFixed(0)+'%');
+  const pos=partnerPos(sim);
+  if(S.step===4)mapUser.setPartner(pos);
+  if(mapAdmin)mapAdmin.setPartner(pos);
+}
+function renderAll(){renderTabs();renderUser();renderBank();renderPartner();renderAdmin()}
+
+/* ---------- actions ---------- */
+function reset(){
+  S.step=1;S.bankId=null;S.units=1;S.rx=null;S.rxFile=null;S.payError='';S.urgent=false;S.paying=false;S.paid=false;S.activeId=null;S.sim=null;S.otpErr=false;
+}
+function pay(){
+  S.paying=true;S.payError='';renderUser();
+  setTimeout(async()=>{
+    S.payTxn='PREV'+String(Math.floor(10000000+Math.random()*89999999));
+    try{
+      const fd=new FormData();
+      [['bankId',S.bankId],['hospId',S.hospId],['group',S.group],['comp',S.comp],['units',S.units],['urgent',S.urgent],['patient',S.patient.trim()],['phone',S.phone],['txn',S.payTxn]].forEach(([k,v])=>fd.append(k,v));
+      if(S.rxFile)fd.append('prescription',S.rxFile);
+      const o=await api('/orders',{method:'POST',body:fd});
+      S.paid=true;renderUser();
+      setTimeout(async()=>{
+        try{STOCK=await api('/stock')}catch(e){}
+        S.orders.unshift(o);S.activeId=o.id;S.bankView=o.bankId;startSim(o);
+        S.paying=false;S.paid=false;S.step=4;renderAll();
+      },1300);
+    }catch(e){S.paying=false;S.paid=false;S.payError=e.message;renderUser()}
+  },1700);
+}
+function act(name,v){
+  switch(name){
+    case 'goto':S.step=Number(v);break;
+    case 'authMode':authMode(v);return;
+    case 'authenticate':authenticate();return;
+    case 'locate':if(navigator.geolocation)navigator.geolocation.getCurrentPosition(pos=>{S.geoNote='Location permission granted · '+pos.coords.latitude.toFixed(3)+', '+pos.coords.longitude.toFixed(3);const n=document.querySelector('#geoNote');if(n)n.textContent=S.geoNote;alert('Your device location was read. Select the matching state, district and city manually; these coordinates are not sent to a server.')},()=>alert('Location access was unavailable. Choose your state, district and city manually.'));return;
+    case 'group':S.group=v;break;
+    case 'book':S.bankId=v;S.units=1;S.step=2;break;
+    case 'units':{const max=Math.min(4,stockOf(S.bankId,S.group,S.comp).units);S.units=clamp(S.units+Number(v),1,max);break}
+    case 'urgent':S.urgent=v==='1';break;
+    
+    case 'rxclear':S.rx=null;S.rxFile=null;break;
+    case 'logout':logout();return;
+    case 'topay':S.step=3;break;
+    case 'method':S.method=v;break;
+    case 'pay':pay();return;
+    case 'speed':S.speed=Number(v);break;
+    case 'pause':S.paused=!S.paused;break;
+    case 'simotp':confirmDelivery(S.sim.otp);return;
+    case 'again':reset();break;
+    case 'online':S.online=!S.online;break;
+    case 'goUser':S.role='user';break;
+    case 'partnerotp':{const el=$('#otpIn');confirmDelivery(el?el.value.trim():'');return}
+  }
+  renderAll();
+}
+
+/* ---------- wiring ---------- */
+mapUser=createMap($('#map-user'),(kind,id)=>{
+  if(S.step>2||(S.step===2&&kind==='b'))return;
+  if(kind==='h'){S.hospId=id;renderAll();return}
+  if(S.step===1&&stockOf(id,S.group,S.comp).units>0){S.bankId=id;S.units=1;S.step=2;renderAll()}
+});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act],[data-role]');if(!t||t.disabled)return;
+  if(t.dataset.role){S.role=t.dataset.role;renderAll();return}
+  act(t.dataset.act,t.dataset.v);
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.bind){S[t.dataset.bind]=t.value;if(t.dataset.bind==='locState'){S.locDistrict=LOCATIONS[t.value][0];S.locCity=(CITIES[S.locDistrict]||[S.locDistrict])[0];renderLocation();return}if(t.dataset.bind==='locDistrict'){S.locCity=(CITIES[t.value]||[t.value])[0];renderLocation();return}if(t.dataset.bind==='bankView'){renderBank()}else{S.bankId=null;renderAll()}return}
+  if(t.id==='rxfile'&&t.files&&t.files[0]){S.rx=t.files[0].name;S.rxFile=t.files[0];renderUser()}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.in){S[t.dataset.in]=t.dataset.in==='phone'?t.value.replace(/\D/g,''):t.value;updateOrderBtn()}
+});
+let last=performance.now();
+setInterval(()=>{const n=performance.now(),dt=Math.min(.5,(n-last)/1000);last=n;advance(dt)},100);
+authMode('login');authCheck();
+})();
+</script>
+
+</body></html>

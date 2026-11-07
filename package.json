@@ -1,0 +1,19 @@
+{
+  "name": "blood-booking",
+  "version": "1.0.0",
+  "description": "Blood Booking - blood availability and hospital delivery coordination (coursework preview, full stack)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0"
+  }
+}

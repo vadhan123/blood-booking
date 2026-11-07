@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run Blood Booking",
+      "program": "${workspaceFolder}/server/server.js",
+      "env": { "PORT": "3000" }
+    }
+  ]
+}
